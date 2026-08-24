@@ -3,3 +3,8 @@
 node_modules/
 .venv/
 __pycache__/
+
+# macOS HFS+/APFS 大小写不敏感:*.log 会误匹配 .Log/ 整个目录,
+# 显式白名单这两个 markdown 文档目录
+!.Log/
+!.plan/
