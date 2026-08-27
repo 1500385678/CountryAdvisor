@@ -138,6 +138,71 @@
       border-color: rgba(139, 148, 158, 0.3);
     }
 
+    /* --- Phase 0/Task 0.4 · 数据快照与国别列表 --- */
+    .snapshot {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 640px) { .snapshot { grid-template-columns: repeat(2, 1fr); } }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+    .country-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 16px;
+      font-size: 14px;
+    }
+    @media (max-width: 640px) { .country-list { grid-template-columns: 1fr; } }
+    .country-list li {
+      padding: 8px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .country-name { color: var(--fg); }
+    .country-tag {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    .data-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .data-fallback {
+      padding: 16px;
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .links {
       display: flex;
       gap: 24px;
@@ -172,7 +237,7 @@
       <p class="subtitle">国别档案 · 三维拆解 · 关系图谱</p>
       <div class="meta">
         <span>v1.0</span>
-        <span>Phase 0 · 骨架</span>
+        <span>Phase 0 · 骨架 + 数据驱动</span>
         <span>2026-08-24 立项</span>
       </div>
     </header>
@@ -210,19 +275,32 @@
           <span class="status-value"><span class="pill">已完成</span></span>
         </div>
         <div class="status-row">
-          <span class="status-label">Phase 0 / Task 0.3 · 首条国别档案示例</span>
-          <span class="status-value"><span class="pill pill-pending">待启动</span></span>
+          <span class="status-label">Phase 0 / Task 0.3 · 解析器 + countries.json (17 国 / 11 分类)</span>
+          <span class="status-value"><span class="pill">已完成</span></span>
         </div>
         <div class="status-row">
-          <span class="status-label">Phase 1 · 三维拆解模板化</span>
+          <span class="status-label">Phase 0 / Task 0.4 · index.html 渲染 countries.json</span>
+          <span class="status-value"><span class="pill">已完成</span></span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Phase 1 · 三维拆解模板化 + Web MVP</span>
           <span class="status-value"><span class="pill pill-pending">规划中</span></span>
         </div>
+      </div>
+    </section>
+
+    <!-- Phase 0/Task 0.4 · 数据快照(由 script 注入) -->
+    <section id="snapshot-section">
+      <h2>数据快照 · 已入库国别库</h2>
+      <div id="snapshot-root">
+        <div class="data-fallback">加载 <code>./data/countries.json</code> 中…</div>
       </div>
     </section>
 
     <div class="links">
       <a href="./README.md">README · 立项书</a>
       <a href="./项目开发计划.md">项目开发计划</a>
+      <a href="./data/countries.json">countries.json · 数据源</a>
       <a href="../01_国家起源与演变/01_国家起源与演变.md">01 · 国家起源与演变</a>
     </div>
 
@@ -230,5 +308,80 @@
       国家是百年尺度的事业,季度热点是噪音。
     </footer>
   </div>
+
+  <script>
+    // Phase 0/Task 0.4 · 零依赖 fetch + render
+    // 渲染 stats 摘要 + 国别列表;失败时显示降级提示,不影响原骨架
+    (function () {
+      var root = document.getElementById('snapshot-root');
+      if (!root) return;
+
+      function renderFallback(msg) {
+        root.innerHTML = '<div class="data-fallback">' + msg + '</div>';
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      fetch('./data/countries.json', { cache: 'no-store' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (db) {
+          var s = db.stats || {};
+          var mentions = db.country_mentions || {};
+          var categories = Array.isArray(db.categories) ? db.categories : [];
+
+          // 反查:国家 → 首条分类(由 representative_countries 推导)
+          var countryFirstCat = {};
+          categories.forEach(function (c) {
+            (c.representative_countries || []).forEach(function (cn) {
+              if (!countryFirstCat[cn]) countryFirstCat[cn] = c.name || c.id;
+            });
+          });
+
+          // 1) stats 摘要
+          var countryCount = Object.keys(mentions).length || (s.unique_countries || 0);
+          var statsHtml =
+            '<div class="snapshot">' +
+              '<div class="stat"><div class="stat-num">' + countryCount + '</div><div class="stat-label">国别</div></div>' +
+              '<div class="stat"><div class="stat-num">' + (s.categories || 0) + '</div><div class="stat-label">分类</div></div>' +
+              '<div class="stat"><div class="stat-num">' + (s.sections || 0) + '</div><div class="stat-label">解析章节</div></div>' +
+              '<div class="stat"><div class="stat-num">' + (s.tables || 0) + '</div><div class="stat-label">解析表格</div></div>' +
+            '</div>';
+
+          // 2) 国别列表(按中文名 localeCompare 排序)
+          var names = Object.keys(mentions).sort(function (a, b) {
+            return a.localeCompare(b, 'zh');
+          });
+          var listHtml = '<ul class="country-list">';
+          names.forEach(function (cn) {
+            var tag = countryFirstCat[cn] || '—';
+            listHtml +=
+              '<li>' +
+                '<span class="country-name">' + escapeHtml(cn) + '</span>' +
+                '<span class="country-tag">' + escapeHtml(tag) + '</span>' +
+              '</li>';
+          });
+          listHtml += '</ul>';
+
+          // 3) 数据元信息
+          var metaHtml = '<div class="data-meta">数据源:' +
+            (db.source || []).map(escapeHtml).join(' / ') +
+            ' · schema v' + escapeHtml(db.schema_version || '?') +
+            ' · 生成于 ' + escapeHtml(db.generated_at || '?') +
+          '</div>';
+
+          root.innerHTML = statsHtml + listHtml + metaHtml;
+        })
+        .catch(function (err) {
+          renderFallback('数据未就位 · 请运行 <code>python3 scripts/md_to_country_db.py</code> · ' + escapeHtml(err.message));
+        });
+    })();
+  </script>
 </body>
 </html>
