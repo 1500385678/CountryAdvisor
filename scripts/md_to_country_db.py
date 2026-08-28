@@ -4,10 +4,11 @@
 md_to_country_db.py
 ====================
 Phase 0 / Task 0.3  ·  2026-08-26 T2 交付
+Phase 0 / Task 0.5  ·  2026-08-29 T2 扩展(parser 覆盖度 2/10 → 10/10 全册)
 
 解析张勇 _CountryLib/ 下的国别知识 md
-  - 01_国家起源与演变/01_国家起源与演变.md  (国家综合实力框架)
-  - 02_国家分支与特点/02_国家分支与特点.md  (国家分类与代表国)
+  - 默认扫 _CountryLib/ 下所有 0X_主题目录(01-10 全册)
+  - 也可用 --src 显式指定若干目录
 → 统一结构的 JSON,落地到 data/countries.json
 
 输出结构
@@ -298,22 +299,27 @@ def main() -> int:
 
     args = ap.parse_args()
 
-    # 默认源目录
+    # 默认源目录:动态扫 _CountryLib/ 下所有 0X_主题目录(覆盖 01-10 全册)
     if not args.src:
         web_root = Path(__file__).resolve().parent.parent
         lib_root = web_root.parent
-        args.src = [
-            lib_root / "01_国家起源与演变",
-            lib_root / "02_国家分支与特点",
-        ]
+        # 自动发现:任何以"数字_"开头的子目录都算主题目录
+        args.src = sorted(
+            d for d in lib_root.iterdir()
+            if d.is_dir() and d.name[:3].rstrip("_").isdigit()
+        )
+        if not args.src:
+            # 兜底:显式列 01-10(若 iterdir 因权限/macOS 不可用时)
+            args.src = [lib_root / f"{i:02d}_" for i in range(1, 11)]
 
-    # 收集所有 md
+    # 收集所有 md:glob 模式要能匹配 01_..09_..10_(0* 会漏掉 10_*)
     md_files: list[Path] = []
     for src_dir in args.src:
         if not src_dir.exists():
             print(f"⚠️  目录不存在: {src_dir}", file=sys.stderr)
             continue
-        for md in sorted(src_dir.glob("0*.md")):
+        # 匹配数字开头的 md:01_*.md ~ 99_*.md
+        for md in sorted(src_dir.glob("[0-9]*.md")):
             md_files.append(md)
 
     if not md_files:

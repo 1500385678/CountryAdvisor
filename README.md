@@ -48,6 +48,7 @@
   - [x] **Task 0.1** `.plan/` 目录 + 20260824 增量计划 + README v1.0(本日完成)
   - [x] **Task 0.2** 选定 **纯 HTML 零依赖** 骨架 + 落 `index.html` 最小可渲染页(2026-08-25 03:20 T2 交付)+ 顺手修 `.gitignore`(解除 macOS 大小写不敏感对 `.Log/` `.plan/` 的误伤)
   - [x] **Task 0.3** `scripts/md_to_country_db.py` 解析器 + `data/countries.json`(零依赖纯 stdlib,17 国 + 11 分类;2026-08-26 03:20 T2 交付)
+  - [x] **Task 0.5** parser 覆盖度 2/10 → 10/10 全册:默认 src 改为动态扫 `_CountryLib/` 下所有 `0X_主题目录`,glob `0*.md` 修成 `[0-9]*.md` 修 10_扫不到 bug;`data/countries.json` 同步:sections 41→159、tables 30→98(17 国 / 11 分类不变,03-10 仅提及已知国名;2026-08-29 03:20 T2 交付)
   - [x] **Task 0.4** `index.html` 渲染 `countries.json`(零依赖 `<script>` ES2017 Fetch API,stats 摘要 + 国别列表;fetch 失败 fallback 不破坏骨架;2026-08-28 03:20 T2 交付)
 - [ ] **Phase 1** — 三维拆解模板化
   - [ ] **Task 1.1** "世家"卡片模板(统治结构 + 家族网络 + 精英循环)
@@ -79,6 +80,7 @@
 | 2026-08-26 03:20 | Phase 0/Task 0.3 解析器:`scripts/md_to_country_db.py` + `data/countries.json`(纯 stdlib,17 国 + 11 分类);同步勾选 README 与项目开发计划 | T2 cron 每日 03:20 |
 | 2026-08-27 03:20 | 入库 `国家顾问开发架构与计划.md`(522 行,产品哲学/全景架构,v2 草案待合并评审);同步 README §六 Task 0.3 状态;补 §八 "产品全景" 段 | T2 cron 每日 03:20 |
 | 2026-08-28 03:20 | Phase 0/Task 0.4 Web 端最小可视化:`index.html` 加 `<script>` 段 fetch `data/countries.json` 渲染 stats 摘要(17 国 / 11 分类 / 41 章节 / 30 表格) + 国别列表(中文名排序 + 首条分类标签);同步修正 HTML 进度面板 Task 0.3 显示 drift;同步勾选 README §六 + 项目开发计划 §五 | T2 cron 每日 03:20 |
+| 2026-08-29 03:20 | Phase 0/Task 0.5 parser 覆盖度 2/10 → 10/10 全册:`md_to_country_db.py` 默认 src 动态扫 `_CountryLib/0X_主题目录`,glob `0*.md` 修成 `[0-9]*.md` 修 10_ 扫不到 bug;`data/countries.json` 同步刷新(sections 41→159、tables 30→98);顺手 `git rm .plan/20260828.md` 修 8/28 working tree 不干净;同步勾选 README §六 + 项目开发计划 §五 | T2 cron 每日 03:20 |
 
 ---
 
