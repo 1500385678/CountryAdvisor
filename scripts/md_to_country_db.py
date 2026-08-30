@@ -352,10 +352,21 @@ def main() -> int:
     # 分类
     categories = build_categories(parsed)
 
+    # v0.2 扩展层:加载手工维护的国别档案(独立数据文件,不影响 v0.1 mentions/aliases 解析)
+    # 文件存在则 merge;不存在则保持 v0.1 schema 兼容(老 parser 输出)
+    extended_path = Path(__file__).parent.parent / "data" / "extended_countries.json"
+    countries_ext: list[dict] = []
+    if extended_path.exists():
+        try:
+            countries_ext = json.loads(extended_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"⚠️  加载 {extended_path.name} 失败:{e};v0.2 扩展层跳过,保持 v0.1 输出")
+            countries_ext = []
+
     # 组装输出
     output = {
         "generated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "schema_version": "0.1",
+        "schema_version": "0.2" if countries_ext else "0.1",
         "source": [m.name for m in md_files],
         "stats": {
             "sections": sum(len(p["sections"]) for p in parsed),
@@ -363,12 +374,15 @@ def main() -> int:
             "mentions": len(all_mentions),
             "unique_countries": len(country_mentions),
             "categories": len(categories),
+            "countries_count": len(countries_ext),
         },
         "categories": categories,
         "country_mentions": country_mentions,
         "country_aliases": COUNTRY_ALIASES,
         "tables": all_tables,
     }
+    if countries_ext:
+        output["countries"] = countries_ext
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
@@ -378,16 +392,24 @@ def main() -> int:
 
     print()
     print(f"✅ 已生成: {args.out}")
+    print(f"   - schema:    v{output['schema_version']}")
     print(f"   - sections:  {output['stats']['sections']}")
     print(f"   - tables:    {output['stats']['tables']}")
     print(f"   - mentions:  {output['stats']['mentions']}")
-    print(f"   - countries: {output['stats']['unique_countries']}")
+    print(f"   - mentioned: {output['stats']['unique_countries']} (v0.1 mentions)")
+    if countries_ext:
+        print(f"   - countries: {output['stats']['countries_count']} (v0.2 扩展层)")
     print(f"   - categories:{output['stats']['categories']}")
     print()
-    print("🌍 识别到的国家:")
+    print("🌍 提及国家(v0.1):")
     for c, ms in sorted(country_mentions.items()):
         iso3 = ms[0].get("iso3", "??")
         print(f"   - {c} ({iso3})  ·  {len(ms)} 处提及")
+    if countries_ext:
+        print()
+        print("🗺️  v0.2 扩展国别档案:")
+        for c in countries_ext:
+            print(f"   - {c['name_cn']} ({c['iso3']})  ·  {c['region']}/{c.get('subregion', '-')}  ·  {c['government_type']}")
     print()
     print("🏷️  分类(branch):")
     for c in categories:
